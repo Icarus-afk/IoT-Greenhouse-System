@@ -75,7 +75,7 @@ def on_connect(client, userdata, flags, rc):
 
 def main():
     # Create MQTT client
-    client = mqtt.Client()
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
 
     # Assign on_connect callback
     client.on_connect = on_connect
