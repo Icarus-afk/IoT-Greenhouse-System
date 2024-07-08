@@ -1,0 +1,13 @@
+USER -> Login, Logout, Signup, Get_information, Forget_password.
+
+Device -> Device Data (Filter = Date, Parameter (i.g soil moisture, temperature..) (Paginate),
+          Device Status ( Online / Offline)
+
+Notification -> Get_Notification (Filter = Date, Parameter (i.g soil moisture, temperature ..) (Paginate)
+
+Greenhouse ->   Set Crop
+                Set Location
+                Change Name
+
+
+Socket -> Data, Notification

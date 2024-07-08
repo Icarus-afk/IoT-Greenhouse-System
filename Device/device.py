@@ -6,12 +6,13 @@ import paho.mqtt.client as mqtt
 import logging
 import colorlog
 
-# Device ID
-DEVICE_ID = "441801"
+# Device IDs
+DEVICE_IDS = ["441801", "441802", "441803"]
 
 # MQTT Topics
 DATA_TOPIC = "IoT/Device/Data"
 STATUS_TOPIC = "IoT/Device/Status"
+HVAC_TOPIC = "IoT/Device/HVAC"
 
 # MQTT Broker settings
 BROKER = "broker.hivemq.com"
@@ -37,34 +38,43 @@ handler.setFormatter(colorlog.ColoredFormatter(
 logger.addHandler(handler)
 
 # Simulate sensor data
-def get_sensor_data():
+def get_sensor_data(device_id):
     return {
-        "device_id": DEVICE_ID,
-        "temperature": round(random.uniform(15.0, 45.0), 2),  # Simulate temperature in °C
-        "humidity": round(random.uniform(30.0, 90.0), 2),     # Simulate humidity in %
+        "device_id": device_id,
+        "temperature": round(random.uniform(5.0, 45.0), 2),  # Simulate temperature in °C
+        "humidity": round(random.uniform(10.0, 90.0), 2),     # Simulate humidity in %
         "soil_moisture": round(random.uniform(0.0, 100.0), 2),# Simulate soil moisture in %
         "rain_level": round(random.uniform(0.0, 50.0), 2),    # Simulate rain level in mm
-        "light_lux": round(random.uniform(100.0, 1000.0), 2)  # Simulate light intensity in lux
+        "light_lux": round(random.uniform(100.0, 2000.0), 2)  # Simulate light intensity in lux
     }
 
 # Function to publish sensor data
-def publish_data(client):
+def publish_data(client, device_id):
     while True:
-        sensor_data = get_sensor_data()
+        sensor_data = get_sensor_data(device_id)
         logger.debug(f"Publishing sensor data: {sensor_data}")
         client.publish(DATA_TOPIC, json.dumps(sensor_data))
-        time.sleep(30)  # Send data every 5 seconds
+        time.sleep(5)  
 
 # Function to publish device status
-def publish_status(client):
+def publish_status(client, device_id):
     while True:
         status_message = {
-            "device_id": DEVICE_ID,
+            "device_id": device_id,
             "status": 1  # 1 means the device is online
         }
         logger.debug(f"Publishing device status: {status_message}")
         client.publish(STATUS_TOPIC, json.dumps(status_message))
-        time.sleep(10)  # Send status every 10 seconds
+        time.sleep(2)  
+
+def publish_hvac_status(client, device_id):
+    hvac_status = random.choice([True, False])  # Randomly choose True or False
+    hvac_message = {
+        "device_id": device_id,
+        "status": hvac_status
+    }
+    logger.debug(f"Publishing HVAC status: {hvac_message}")
+    client.publish(HVAC_TOPIC, json.dumps(hvac_message))
 
 # MQTT on_connect callback
 def on_connect(client, userdata, flags, rc):
@@ -86,13 +96,14 @@ def main():
     # Start the MQTT loop
     client.loop_start()
 
-    # Start the data publishing thread
-    data_thread = threading.Thread(target=publish_data, args=(client,))
-    data_thread.start()
+    # Start the data publishing thread for each device
+    for device_id in DEVICE_IDS:
+        data_thread = threading.Thread(target=publish_data, args=(client, device_id))
+        data_thread.start()
 
-    # Start the status publishing thread
-    status_thread = threading.Thread(target=publish_status, args=(client,))
-    status_thread.start()
+        # Start the status publishing thread for each device
+        status_thread = threading.Thread(target=publish_status, args=(client, device_id))
+        status_thread.start()
 
     # Keep the main thread running
     try:
