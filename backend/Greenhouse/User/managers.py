@@ -22,6 +22,9 @@ class UserManager(models.Manager):
         return user
 
     def normalize_email(self, email):
-        email_name, domain_part = email.strip().rsplit('@', 1)
-        email = '@'.join([email_name, domain_part.lower()])
-        return email
+        if email is not None and '@' in email:
+            email_name, domain_part = email.strip().rsplit('@', 1)
+            email = '@'.join([email_name, domain_part.lower()])
+            return email
+        else:
+            return email

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fan Control</title>
+    <!-- Include MQTT.js library -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script>
+        // MQTT Broker details
+        const mqttBroker = "wss://broker.hivemq.com:8884/mqtt";
+        const client = mqtt.connect(mqttBroker);
+        const topic = "IoT/Device/HVAC"; // MQTT topic to publish fan commands
+        const deviceId = 441801; // Unique device ID
+
+        // Event handler for successful MQTT connection
+        client.on("connect", () => {
+            console.log("Connected to MQTT broker");
+        });
+
+        // Event handler for MQTT connection errors
+        client.on("error", (error) => {
+            console.error("MQTT Connection Error: ", error);
+        });
+
+        // Function to send fan command
+        function sendFanCommand(status) {
+            const message = {
+                device_id: deviceId,
+                fan_status: status
+            };
+            const messageString = JSON.stringify(message);
+            
+            // Publish fan command to the MQTT topic
+            client.publish(topic, messageString);
+            console.log("Published message:", messageString);
+        }
+    </script>
+</head>
+<body>
+    <h1>Fan Control</h1>
+    <!-- Buttons to control the fan -->
+    <button onclick="sendFanCommand('on')">Turn Fan On</button>
+    <button onclick="sendFanCommand('off')">Turn Fan Off</button>
+</body>
+</html>

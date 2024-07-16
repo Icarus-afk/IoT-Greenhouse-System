@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 # Application definition
 
@@ -42,19 +42,30 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
     "rest_framework",
     "corsheaders",
-    "rest_framework_simplejwt.token_blacklist",    
+    "middleware",
     "Device",
     "Notification",
     "Config",
-    "User"
+    "User",
 ]
+
+ASGI_APPLICATION = 'Greenhouse.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware", 
+    'corsheaders.middleware.CorsMiddleware',
     "middleware.jwt_middleware.JWTAuthenticationMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -70,6 +81,12 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:5500",  # Replace with your frontend URL
+    "http://localhost:5500",  # Add additional origins if needed
+    # other origins as needed
+]
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
@@ -95,8 +112,8 @@ SECURE_COOKIES = True # Use False for development
 
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
 JWT_ALGORITHM = 'HS256'
-JWT_EXP_DELTA_SECONDS = 3600  # Token expiration time in seconds
-JWT_REFRESH_EXP_DELTA_SECONDS = 86400  # Refresh token expiration time in seconds
+JWT_EXP_DELTA_SECONDS = 36000  # Token expiration time in seconds
+JWT_REFRESH_EXP_DELTA_SECONDS = 864000  # Refresh token expiration time in seconds
 
 
 AUTH_USER_MODEL = 'User.User'

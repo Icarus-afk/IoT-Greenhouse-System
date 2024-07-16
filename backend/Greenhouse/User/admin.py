@@ -1,6 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DefaultUserAdmin
 from .models import User
+from .models import BlacklistedToken
+
+class BlacklistedTokenAdmin(admin.ModelAdmin):
+    list_display = ('token', 'logout_at')
+
+admin.site.register(BlacklistedToken, BlacklistedTokenAdmin)
+
 
 @admin.register(User)
 class UserAdmin(DefaultUserAdmin):

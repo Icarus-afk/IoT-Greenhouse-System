@@ -7,8 +7,10 @@ from utils.jwt_utils import decode_jwt
 
 class JWTAuthenticationMiddleware(MiddlewareMixin):
     def process_request(self, request):
-        token = request.COOKIES.get('jwt')
-        if token:
+        print(request)
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '').split()
+        if len(auth_header) == 2 and auth_header[0].lower() == 'bearer':
+            token = auth_header[1]
             payload = decode_jwt(token)
             if payload:
                 user_id = payload.get('user_id')

@@ -24,4 +24,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("user/", include("User.urls")),
     path("device/", include("Device.urls")),
+    path("notification/", include("Notification.urls")),
 ]

@@ -39,14 +39,19 @@ def get_warning_level(value, crop_config):
 
 # Helper function to check and insert a notification if needed
 def check_and_notify(device, parameter, value):
+    logger.debug(f"Checking and notifying for device: {device.device_id}, parameter: {parameter}, value: {value}")
     try:
         greenhouse = Greenhouse.objects.get(device=device)
+        logger.debug(f"Greenhouse obtained: {greenhouse.id}")
         crop_config = CropConfig.objects.get(crop=greenhouse.crop, parameter=parameter)
-    except (Greenhouse.DoesNotExist, CropConfig.DoesNotExist):
+        logger.debug(f"Crop configuration obtained: {crop_config.id}")
+    except (Greenhouse.DoesNotExist, CropConfig.DoesNotExist) as e:
         logger.error(f"No greenhouse or crop configuration found for device: {device.device_id} and parameter: {parameter}")
+        logger.debug(f"Error: {e}")
         return
 
     warning_level = get_warning_level(value, crop_config)
+    logger.debug(f"Warning level: {warning_level}")
     
     if warning_level is None:
         message = f"Invalid value provided by the device {device.name}. Please check your device."
@@ -56,16 +61,17 @@ def check_and_notify(device, parameter, value):
         return
     
     last_notification = Notification.objects.filter(user__in=greenhouse.users.all(), message__contains=parameter).order_by('-timestamp').first()
+    logger.debug(f"Last notification: {last_notification}")
     
     if not last_notification or last_notification.warning_level != warning_level:
         message_bit = NotificationConfig.objects.get(warning_level=warning_level, parameter=parameter)
         message = f"{message_bit.message} device {device.name}, {parameter} level is {value}"
         for user in greenhouse.users.all():
-            Notification.objects.create(user=user, message=message, warning_level=warning_level)
+            Notification.objects.create(user=user, message=message, warning_level=warning_level, device=device)
         logger.info(f"Notification created for device: {device.name}, {message}")
     else:
         logger.info(f"No new notification needed for device: {device.name}, parameter: {parameter}")
-
+        
 # MQTT on_connect callback
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -77,18 +83,22 @@ def on_connect(client, userdata, flags, rc):
         logger.error(f"Failed to connect, return code {rc}")
 
 # MQTT on_message callback
+# MQTT on_message callback
 def on_message(client, userdata, msg):
+    logger.debug(f"Received a message on topic: {msg.topic}")
     topic = msg.topic
     payload = json.loads(msg.payload.decode())
     timestamp = timezone.now()
 
     try:
         device, created = Device.objects.get_or_create(device_id=payload["device_id"])
+        logger.debug(f"Device obtained or created: {device.device_id}")
         
         # Update the last seen timestamp
         device.last_seen = timestamp
         device.is_online = True
         device.save()
+        logger.debug(f"Device last seen timestamp updated: {device.last_seen}")
 
         if topic == DATA_TOPIC:
             SensorData.objects.create(
@@ -101,6 +111,7 @@ def on_message(client, userdata, msg):
                 timestamp=timestamp
             )
             logger.info(f"Sensor data saved for device: {device.device_id}")
+            logger.debug(f"Sensor data: {payload}")
             
             # Check and notify for each parameter
             check_and_notify(device, "Temperature", payload["temperature"])
@@ -116,6 +127,7 @@ def on_message(client, userdata, msg):
                 timestamp=timestamp
             )
             logger.info(f"Device status saved for device: {device.name}")
+            logger.debug(f"Device status: {payload['status']}")
         elif topic == HVAC_TOPIC:
             HVACStatus.objects.create(
                 device=device,
@@ -123,8 +135,11 @@ def on_message(client, userdata, msg):
                 timestamp=timestamp
             )
             logger.info(f"HVAC status saved for device: {device.name}")
+            logger.debug(f"HVAC status: {payload['status']}")
     except Exception as e:
         logger.error(f"Error saving data: {e}")
+        logger.debug(f"Payload: {payload}")
+        
 
 def start_mqtt_client():
     client = mqtt.Client()

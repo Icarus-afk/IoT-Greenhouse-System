@@ -1,4 +1,5 @@
 import logging
+from User.models import BlacklistedToken
 from rest_framework import generics, permissions
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
@@ -11,9 +12,13 @@ from django.core.exceptions import PermissionDenied
 from .authenticate import CustomAuthentication, authenticate
 from Config.response import create_response
 
+
+
 User = get_user_model()
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
+
+
 
 @api_view(["POST"])
 def signup_view(request):
@@ -51,6 +56,7 @@ def signup_view(request):
     return create_response(message="User created successfully", status_code=status.HTTP_201_CREATED)
 
 
+
 @api_view(["GET"])
 @authentication_classes([CustomAuthentication])
 def get_user_info_view(request):
@@ -59,17 +65,20 @@ def get_user_info_view(request):
     """
     if request.user.is_authenticated:
         user_info = {
+            "id": request.user.id,
             "username": request.user.username,
             "email": request.user.email,
             "first_name": request.user.first_name,
             "last_name": request.user.last_name,
             "age": request.user.age,
             "address": request.user.address,
-            "joined": request.user.joined
+            "joined": request.user.joined.strftime('%Y-%m-%d %H:%M:%S')
         }
         return create_response(data=user_info, message="User info retrieved successfully")
     else:
         return create_response(message="Authentication required", status_code=status.HTTP_401_UNAUTHORIZED, success=False)
+
+
 
 
 @api_view(["POST"])
@@ -83,25 +92,22 @@ def login_view(request):
         user = authenticate(username=username, password=password)
         if user is not None:
             refresh = RefreshToken.for_user(user)
-            response = create_response(message="Login successful")
-            response.set_cookie(
-                key="jwt",
-                value=str(refresh.access_token),
-                httponly=True,
-                max_age=int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds()),
-                secure=settings.SECURE_COOKIES,
-                samesite='Lax'
-            )
-            response.set_cookie(
-                key="refresh",
-                value=str(refresh),
-                httponly=True,
-                max_age=int(settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"].total_seconds()),
-                secure=settings.SECURE_COOKIES,
-                samesite='Lax'
-            )
+            response_data = {
+                "user": {
+                    "id": user.id,
+                    "username": user.username,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "age": user.age,
+                    "address": user.address,
+                    "joined": user.joined
+                },
+                "jwt": str(refresh.access_token),
+                "refresh": str(refresh),
+            }
             logger.info(f"User {username} logged in successfully")
-            return response
+            return create_response(data=response_data, message="Login successful")
         else:
             logger.warning(f"Invalid login attempt for user: {username}")
             return create_response(message="Invalid credentials", status_code=status.HTTP_401_UNAUTHORIZED, success=False)
@@ -113,6 +119,32 @@ def login_view(request):
         return create_response(message="An error occurred during authentication", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, success=False)
 
 
+
+@api_view(["GET"])
+@authentication_classes([CustomAuthentication])
+def refresh_token_view(request):
+    """
+    Refresh JWT token using refresh token from Authorization header.
+    """
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '').split()
+    if len(auth_header) != 2 or auth_header[0].lower() != 'bearer':
+        return create_response(message="Refresh token not found", status_code=status.HTTP_400_BAD_REQUEST, success=False)
+
+    refresh_token = auth_header[1]
+    
+    try:
+        token = RefreshToken(refresh_token)
+        response_data = {
+            "message": "Token refreshed",
+            "jwt": str(token.access_token),
+            "refresh": str(token)
+        }
+        return create_response(data=response_data, message="Token refreshed")
+    except Exception as e:
+        return create_response(message=str(e), status_code=status.HTTP_400_BAD_REQUEST, success=False)
+
+
+
 @api_view(["POST"])
 def logout_view(request):
     response = create_response(message="Logout successful")
@@ -120,31 +152,6 @@ def logout_view(request):
     response.delete_cookie("refresh")
     return response
 
-
-@api_view(["POST"])
-@authentication_classes([CustomAuthentication])
-def refresh_token_view(request):
-    """
-    Refresh JWT token using refresh token from cookies.
-    """
-    refresh_token = request.COOKIES.get("refresh")
-    if not refresh_token:
-        return create_response(message="Refresh token not found", status_code=status.HTTP_400_BAD_REQUEST, success=False)
-    
-    try:
-        token = RefreshToken(refresh_token)
-        response = create_response(message="Token refreshed")
-        response.set_cookie(
-            key="jwt",
-            value=str(token.access_token),
-            httponly=True,
-            max_age=int(settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds()),
-            secure=settings.SECURE_COOKIES,
-            samesite='Lax'
-        )
-        return response
-    except Exception as e:
-        return create_response(message=str(e), status_code=status.HTTP_400_BAD_REQUEST, success=False)
 
 
 @api_view(["PUT"])
@@ -178,3 +185,12 @@ def set_user_info_view(request):
     else:
         logger.info("User is not authenticated")
         return create_response(message="Authentication required", status_code=status.HTTP_401_UNAUTHORIZED, success=False)
+
+
+
+@api_view(["GET"])
+@authentication_classes([CustomAuthentication])
+def logout_view(request):
+    token = request.auth
+    BlacklistedToken.objects.create(token=str(token))
+    return create_response(message="Logout successful", status_code=status.HTTP_200_OK, success=True)
