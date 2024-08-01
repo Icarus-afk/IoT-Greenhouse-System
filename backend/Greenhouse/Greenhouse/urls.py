@@ -19,6 +19,12 @@ from django.urls import path
 from django.contrib import admin
 from django.conf.urls.static import static
 from django.conf.urls import include
+from django.conf import settings
+from django.contrib import admin
+
+admin.site.site_header = 'Greenhouse System Control Panel'
+admin.site.site_title = 'Greenhouse System Control Panel'
+admin.site.index_title = 'Greenhouse System Control Panel'
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -26,3 +32,6 @@ urlpatterns = [
     path("device/", include("Device.urls")),
     path("notification/", include("Notification.urls")),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

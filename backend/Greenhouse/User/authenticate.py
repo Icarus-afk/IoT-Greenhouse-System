@@ -24,7 +24,6 @@ class CustomAuthentication(JWTAuthentication):
         return (user, validated_token)
 
 
-
 def authenticate(username=None, password=None):
     """
     Authenticate a user based on username and password.

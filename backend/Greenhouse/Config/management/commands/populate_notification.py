@@ -1,5 +1,3 @@
-# In your_app/management/commands/populate_notification_config.py
-
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from Config.models import NotificationConfig
@@ -19,13 +17,13 @@ class Command(BaseCommand):
             {
                 "message": "Low temperature detected.",
                 "warning_level": "Low",
-                "color": "blue"
+                "color": "blue",
                 "parameter": "Temperature"
             },
             {
                 "message": "Optimal temperature range.",
                 "warning_level": "Good",
-                "color": "green"
+                "color": "green",
                 "parameter": "Temperature"
             },
 
@@ -33,68 +31,80 @@ class Command(BaseCommand):
             {
                 "message": "High humidity level detected.",
                 "warning_level": "High",
-                "color": "red"
+                "color": "red",
+                "parameter": "Humidity"
             },
             {
                 "message": "Low humidity level detected.",
                 "warning_level": "Low",
-                "color": "blue"
+                "color": "blue",
+                "parameter": "Humidity"
             },
             {
                 "message": "Optimal humidity range.",
                 "warning_level": "Good",
-                "color": "green"
+                "color": "green",
+                "parameter": "Humidity"
             },
 
             # Soil moisture notifications
             {
                 "message": "High soil moisture level detected.",
                 "warning_level": "High",
-                "color": "red"
+                "color": "red",
+                "parameter": "Soil Moisture"
             },
             {
                 "message": "Low soil moisture level detected.",
                 "warning_level": "Low",
-                "color": "blue"
+                "color": "blue",
+                "parameter": "Soil Moisture"
             },
             {
                 "message": "Optimal soil moisture range.",
                 "warning_level": "Good",
-                "color": "green"
+                "color": "green",
+                "parameter": "Soil Moisture"
             },
 
             # Rainfall notifications
             {
                 "message": "Heavy rainfall detected.",
                 "warning_level": "High",
-                "color": "red"
+                "color": "red",
+                "parameter": "Rainfall"
             },
             {
                 "message": "No rainfall detected.",
                 "warning_level": "Low",
-                "color": "blue"
+                "color": "blue",
+                "parameter": "Rainfall"
             },
             {
                 "message": "Optimal rainfall range.",
                 "warning_level": "Good",
-                "color": "green"
+                "color": "green",
+                "parameter": "Rainfall"
             },
 
             # Light intensity notifications
             {
                 "message": "High light intensity detected.",
                 "warning_level": "High",
-                "color": "red"
+                "color": "red",
+                "parameter": "Light Intensity"
             },
             {
                 "message": "Low light intensity detected.",
                 "warning_level": "Low",
-                "color": "blue"
+                "color": "blue",
+                "parameter": "Light Intensity"
             },
             {
                 "message": "Optimal light intensity range.",
                 "warning_level": "Good",
-                "color": "green"
+                "color": "green",
+                "parameter": "Light Intensity"
             },
         ]
 
@@ -103,7 +113,7 @@ class Command(BaseCommand):
                 message=data["message"],
                 warning_level=data["warning_level"],
                 color=data["color"],
-                timestamp=timezone.now()
+                parameter=data["parameter"]
             )
 
         self.stdout.write(self.style.SUCCESS('Successfully populated notification configurations'))

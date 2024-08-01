@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 # MQTT settings
-BROKER = "broker.hivemq.com"
+BROKER = "broker.emqx.io"
 PORT = 1883
 DATA_TOPIC = "IoT/Device/Data"
 STATUS_TOPIC = "IoT/Device/Status"
@@ -131,7 +131,7 @@ def on_message(client, userdata, msg):
         elif topic == HVAC_TOPIC:
             HVACStatus.objects.create(
                 device=device,
-                status=payload["status"],
+                status=payload["fan_status"],
                 timestamp=timestamp
             )
             logger.info(f"HVAC status saved for device: {device.name}")

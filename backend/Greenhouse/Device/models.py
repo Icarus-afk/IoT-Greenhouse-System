@@ -45,7 +45,7 @@ class SensorData(models.Model):
             
 class DeviceStatus(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
-    status = models.IntegerField()
+    status = models.CharField(max_length=20, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -67,7 +67,7 @@ class DeviceStatus(models.Model):
 
 class HVACStatus(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
-    status = models.BooleanField()
+    status = models.CharField(max_length=20, blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:

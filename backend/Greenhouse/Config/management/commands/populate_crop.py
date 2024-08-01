@@ -1,4 +1,3 @@
-
 from django.core.management.base import BaseCommand
 from Config.models import Crop, CropConfig
 
@@ -46,12 +45,12 @@ class Command(BaseCommand):
                 CropConfig.objects.get_or_create(
                     crop=crop,
                     parameter=param["parameter"],
-                    good_min=param["good_min"],
-                    good_max=param["good_max"],
+                    high_min=param["good_min"],  # Assuming you want "good_min" as high_min
+                    high_max=param["good_max"],  # Assuming you want "good_max" as high_max
                     tolerable_min=param["tolerable_min"],
                     tolerable_max=param["tolerable_max"],
-                    bad_min=param["bad_min"],
-                    bad_max=param["bad_max"]
+                    low_min=param["bad_min"],    # Assuming you want "bad_min" as low_min
+                    low_max=param["bad_max"]     # Assuming you want "bad_max" as low_max
                 )
 
         self.stdout.write(self.style.SUCCESS('Successfully populated crop parameters'))
