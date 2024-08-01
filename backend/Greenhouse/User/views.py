@@ -9,7 +9,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
-from .authenticate import CustomAuthentication, authenticate
+from User.authenticate import CustomAuthentication, authenticate
 from Config.response import create_response
 
 

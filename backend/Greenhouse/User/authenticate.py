@@ -15,11 +15,13 @@ class CustomAuthentication(JWTAuthentication):
             return None
 
         raw_token = auth_header[1]
-        if BlacklistedToken.objects.filter(token=raw_token).exists():
-            raise AuthenticationFailed('Token is blacklisted')
-
         validated_token = self.get_validated_token(raw_token)
-        return self.get_user(validated_token), validated_token
+        user = self.get_user(validated_token)
+        
+        if not user:
+            return None
+
+        return (user, validated_token)
 
 
 
