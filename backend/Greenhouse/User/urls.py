@@ -5,6 +5,7 @@ from .views import login_view, logout_view, signup_view, get_user_info_view, set
 from rest_framework_simplejwt.views import TokenRefreshView
 
 
+
 urlpatterns = [
     path("login/", login_view, name="login"),
     path("logout/", logout_view, name="logout"),

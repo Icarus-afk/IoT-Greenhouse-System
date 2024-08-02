@@ -145,15 +145,6 @@ def refresh_token_view(request):
 
 
 
-@api_view(["POST"])
-def logout_view(request):
-    response = create_response(message="Logout successful")
-    response.delete_cookie("jwt")
-    response.delete_cookie("refresh")
-    return response
-
-
-
 @api_view(["PUT"])
 @authentication_classes([CustomAuthentication])
 def set_user_info_view(request):

@@ -6,13 +6,6 @@ from django.utils.translation import gettext_lazy as _
 from .models import User
 
 
-class MyAdminSite(admin.AdminSite):
-    site_header = 'My Custom Admin Header'
-    site_title = 'My Custom Admin Title'
-    index_title = 'Welcome to My Custom Admin'
-
-admin_site = MyAdminSite(name='myadmin')
-
 class UserAdmin(BaseUserAdmin):
     # The fields to be used in displaying the User model.
     # These override the definitions on the base UserAdmin

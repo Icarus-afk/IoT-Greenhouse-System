@@ -1,6 +1,6 @@
 from rest_framework import generics
 from .models import Device, Greenhouse, SensorData, DeviceStatus
-from .serializers import DeviceSerializer, SensorDataSerializer, DeviceStatusSerializer
+from .serializers import DeviceSerializer, GreenhouseSerializer, SensorDataSerializer, DeviceStatusSerializer
 from Config.response import create_response
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
@@ -8,7 +8,8 @@ from rest_framework.exceptions import ValidationError
 from django.db.models import Q, Max
 from django_filters import rest_framework as filters
 from rest_framework.response import Response
-
+from rest_framework.views import APIView
+from django.utils.dateparse import parse_date
 
 
 class DeviceDataPagination(PageNumberPagination):
@@ -19,14 +20,27 @@ class DeviceDataPagination(PageNumberPagination):
 class DeviceDataView(generics.ListAPIView):
     serializer_class = SensorDataSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['timestamp', 'device__device_id', 'temperature', 'humidity', 'soil_moisture', 'rain_level', 'light_lux']
+    filterset_fields = ['device__device_id', 'temperature', 'humidity', 'soil_moisture', 'rain_level', 'light_lux']
     pagination_class = DeviceDataPagination
 
     def get_queryset(self):
         user = self.request.user
         greenhouses = Greenhouse.objects.filter(users=user)
         devices = Device.objects.filter(greenhouse__in=greenhouses)
-        return SensorData.objects.filter(device__in=devices)
+        queryset = SensorData.objects.filter(device__in=devices)
+        
+        start_date = self.request.query_params.get('start_date', None)
+        end_date = self.request.query_params.get('end_date', None)
+        device_id = self.request.query_params.get('device_id', None)
+        
+        if start_date:
+            queryset = queryset.filter(timestamp__date__gte=parse_date(start_date))
+        if end_date:
+            queryset = queryset.filter(timestamp__date__lte=parse_date(end_date))
+        if device_id:
+            queryset = queryset.filter(device__device_id=device_id)
+        
+        return queryset
 
     def list(self, request, *args, **kwargs):
         try:
@@ -71,3 +85,29 @@ class DeviceStatusView(generics.ListAPIView):
             return create_response(data=str(e), message="Validation error", status_code=400)
         except Exception as e:
             return create_response(data=str(e), message="An error occurred", status_code=500)
+        
+        
+        
+class GreenhouseListView(APIView):
+    def get(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            # Find greenhouses the user has access to
+            greenhouses = Greenhouse.objects.filter(users=user)
+            # Prefetch related devices and crops
+            greenhouses = greenhouses.select_related('device', 'crop')
+            # Serialize the greenhouses along with their devices and crops
+            serializer = GreenhouseSerializer(greenhouses, many=True)
+            return Response({
+                "statusCode": 200,
+                "message": "Greenhouses and their devices fetched successfully",
+                "success": True,
+                "data": serializer.data
+            })
+        except Exception as e:
+            return Response({
+                "statusCode": 500,
+                "message": "An error occurred",
+                "success": False,
+                "data": str(e)
+            })
