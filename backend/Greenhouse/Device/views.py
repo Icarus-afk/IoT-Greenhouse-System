@@ -10,7 +10,12 @@ from django_filters import rest_framework as filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils.dateparse import parse_date
+import logging
+from django.utils.timezone import make_aware
+from datetime import datetime, time
 
+
+logger = logging.getLogger(__name__)
 
 class DeviceDataPagination(PageNumberPagination):
     page_size = 10
@@ -20,26 +25,39 @@ class DeviceDataPagination(PageNumberPagination):
 class DeviceDataView(generics.ListAPIView):
     serializer_class = SensorDataSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['device__device_id', 'temperature', 'humidity', 'soil_moisture', 'rain_level', 'light_lux']
+    filterset_fields = []  # No need for filterset_fields since we are manually filtering
     pagination_class = DeviceDataPagination
 
     def get_queryset(self):
         user = self.request.user
         greenhouses = Greenhouse.objects.filter(users=user)
         devices = Device.objects.filter(greenhouse__in=greenhouses)
-        queryset = SensorData.objects.filter(device__in=devices)
+        queryset = SensorData.objects.filter(device__in=devices).order_by('-timestamp')
+        
+        logger.debug(f"Initial queryset count: {queryset.count()}")
         
         start_date = self.request.query_params.get('start_date', None)
         end_date = self.request.query_params.get('end_date', None)
         device_id = self.request.query_params.get('device_id', None)
         
-        if start_date:
-            queryset = queryset.filter(timestamp__date__gte=parse_date(start_date))
-        if end_date:
-            queryset = queryset.filter(timestamp__date__lte=parse_date(end_date))
-        if device_id:
-            queryset = queryset.filter(device__device_id=device_id)
+        logger.debug(f"Start date: {start_date}, End date: {end_date}, Device ID: {device_id}")
         
+        if start_date:
+            parsed_start_date = parse_date(start_date)
+            logger.debug(f"Parsed start date: {parsed_start_date}")
+            queryset = queryset.filter(timestamp__date__gte=parsed_start_date)
+            logger.debug(f"Queryset count after start date filter: {queryset.count()}")
+        if end_date:
+            parsed_end_date = parse_date(end_date)
+            logger.debug(f"Parsed end date: {parsed_end_date}")
+            queryset = queryset.filter(timestamp__date__lte=parsed_end_date)
+            logger.debug(f"Queryset count after end date filter: {queryset.count()}")
+        if device_id:
+            logger.debug(f"Filtering by device_id: {device_id}")
+            queryset = queryset.filter(device__id=device_id)
+            logger.debug(f"Queryset count after device_id filter: {queryset.count()}")
+        
+        logger.debug(f"Filtered queryset count: {queryset.count()}")
         return queryset
 
     def list(self, request, *args, **kwargs):
@@ -50,8 +68,8 @@ class DeviceDataView(generics.ListAPIView):
             return create_response(data=str(e), message="Validation error", status_code=400)
         except Exception as e:
             return create_response(data=str(e), message="An error occurred", status_code=500)
-
-
+        
+        
 class DeviceStatusFilter(filters.FilterSet):
     device_id = filters.CharFilter(field_name='device__device_id')
     status = filters.CharFilter(field_name='status')

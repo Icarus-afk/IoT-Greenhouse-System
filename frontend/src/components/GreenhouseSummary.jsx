@@ -10,7 +10,9 @@ const GreenhouseSummary = () => {
     const fetchGreenhouseData = async () => {
       try {
         const response = await apiClientAuth.get(API_ENDPOINTS.DEVICE_DETAILS);
-        setGreenhouses(response.data.data);
+        const { data } = response.data;
+        setGreenhouses(data);
+        localStorage.setItem('user_access_list', JSON.stringify(data));
       } catch (error) {
         console.error('Failed to fetch greenhouse data', error);
       }
@@ -21,10 +23,10 @@ const GreenhouseSummary = () => {
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h4" gutterBottom align="center">
         Greenhouses
       </Typography>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} justifyContent="center">
         {greenhouses.map((greenhouse) => (
           <Grid item xs={12} sm={6} md={4} key={greenhouse.id}>
             <GreenhouseCard greenhouse={greenhouse} />
