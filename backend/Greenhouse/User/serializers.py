@@ -7,6 +7,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .models import User
 
+from datetime import datetime
+
 class PasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -34,6 +36,7 @@ class PasswordResetSerializer(serializers.Serializer):
         context = {
             'user': user,
             'reset_link': reset_link,
+            'current_year': datetime.now().year,
         }
 
         subject = "Password Reset Request"
@@ -42,10 +45,11 @@ class PasswordResetSerializer(serializers.Serializer):
 
         send_mail(
             subject,
-            email_body,
+            '',
             settings.DEFAULT_FROM_EMAIL,
             [user.email],
             fail_silently=False,
+            html_message=email_body,
         )
 
     def save(self):
