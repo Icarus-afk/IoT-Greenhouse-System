@@ -1,7 +1,8 @@
-// src/components/DeviceDataFetcher.jsx
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Pagination, Typography, TextField, Button, Box, FormControl, Select, MenuItem, InputLabel } from '@mui/material';
 import { apiClientAuth, API_ENDPOINTS } from '../api/apiConfig';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 const DeviceDataFetcher = ({ filters, setFilters }) => {
     const [data, setData] = useState([]);
@@ -12,7 +13,6 @@ const DeviceDataFetcher = ({ filters, setFilters }) => {
     const [devices, setDevices] = useState([]);
     const [selectedDevice, setSelectedDevice] = useState('');
 
-    // Fetch device data from API and update state
     const fetchDeviceData = async () => {
         try {
             const params = {
@@ -27,7 +27,7 @@ const DeviceDataFetcher = ({ filters, setFilters }) => {
             if (response.data.success) {
                 setData(response.data.data.results);
                 setCount(response.data.data.count);
-                setError(''); // Clear error message if data fetch is successful
+                setError('');
             } else {
                 setError('Failed to fetch data');
             }
@@ -37,7 +37,6 @@ const DeviceDataFetcher = ({ filters, setFilters }) => {
         }
     };
 
-    // Fetch devices from local storage
     const fetchDevices = () => {
         const storedData = JSON.parse(localStorage.getItem('user_access_list') || '[]');
         setDevices(storedData.map(device => ({ id: device.device.id, name: device.device.name })));
@@ -46,31 +45,26 @@ const DeviceDataFetcher = ({ filters, setFilters }) => {
     useEffect(() => {
         fetchDevices();
         fetchDeviceData();
-    }, [page, pageSize, filters]);
+    }, [page, pageSize]);
 
-    // Handle filter changes
     const handleFilterChange = (e) => {
         setFilters({ ...filters, [e.target.name]: e.target.value });
     };
 
-    // Handle page changes
     const handlePageChange = (event, value) => {
         setPage(value);
     };
 
-    // Handle device selection
     const handleDeviceChange = (e) => {
         const deviceId = e.target.value;
         setSelectedDevice(deviceId);
         setFilters({ ...filters, device_id: deviceId });
     };
 
-    // Apply filters and fetch data
     const applyFilters = () => {
         fetchDeviceData();
     };
 
-    // Reset filters
     const resetFilters = () => {
         setFilters({
             device_id: '',
@@ -118,52 +112,64 @@ const DeviceDataFetcher = ({ filters, setFilters }) => {
                     onChange={handleFilterChange}
                     sx={{ flex: 1, minWidth: 150 }}
                 />
-                <Button variant="contained" color="primary" onClick={applyFilters}>
+                <Button variant="contained" color="primary" onClick={applyFilters} startIcon={<FilterListIcon />}>
                     Apply Filters
                 </Button>
-                <Button variant="outlined" color="secondary" onClick={resetFilters}>
+                <Button variant="outlined" color="secondary" onClick={resetFilters} startIcon={<RefreshIcon />}>
                     Reset Filters
                 </Button>
             </Box>
 
             {error && <Typography color="error">{error}</Typography>}
 
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Device ID</TableCell>
-                            <TableCell>Device Name</TableCell>
-                            <TableCell>Timestamp</TableCell>
-                            <TableCell>Temperature</TableCell>
-                            <TableCell>Humidity</TableCell>
-                            <TableCell>Soil Moisture</TableCell>
-                            <TableCell>Rain Level</TableCell>
-                            <TableCell>Light Lux</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {data.map((item) => (
-                            <TableRow key={item.timestamp}>
-                                <TableCell>{item.device_id}</TableCell>
-                                <TableCell>{item.device_name}</TableCell>
-                                <TableCell>{new Date(item.timestamp).toLocaleString()}</TableCell>
-                                <TableCell>{item.temperature}</TableCell>
-                                <TableCell>{item.humidity}</TableCell>
-                                <TableCell>{item.soil_moisture}</TableCell>
-                                <TableCell>{item.rain_level}</TableCell>
-                                <TableCell>{item.light_lux}</TableCell>
+            <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                <TableContainer component={Paper}>
+                    <Table sx={{ minWidth: 650 }}>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Device ID</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Device Name</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Timestamp</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Temperature</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Humidity</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Soil Moisture</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Rain Level</TableCell>
+                                <TableCell sx={{ fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>Light Lux</TableCell>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+                        </TableHead>
+                        <TableBody>
+                            {data.map((item) => (
+                                <TableRow
+                                    key={item.timestamp}
+                                    sx={{
+                                        '&:nth-of-type(odd)': {
+                                            backgroundColor: '#f9f9f9',
+                                        },
+                                        '&:hover': {
+                                            backgroundColor: '#e0e0e0',
+                                        },
+                                    }}
+                                >
+                                    <TableCell>{item.device_id}</TableCell>
+                                    <TableCell>{item.device_name}</TableCell>
+                                    <TableCell>{new Date(item.timestamp).toLocaleString()}</TableCell>
+                                    <TableCell>{item.temperature}</TableCell>
+                                    <TableCell>{item.humidity}</TableCell>
+                                    <TableCell>{item.soil_moisture}</TableCell>
+                                    <TableCell>{item.rain_level}</TableCell>
+                                    <TableCell>{item.light_lux}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Box>
 
             <Pagination
                 count={Math.ceil(count / pageSize)}
                 page={page}
                 onChange={handlePageChange}
-                sx={{ mt: 2 }}
+                sx={{ m: 2, display: 'flex', justifyContent: 'center' }}
             />
         </>
     );

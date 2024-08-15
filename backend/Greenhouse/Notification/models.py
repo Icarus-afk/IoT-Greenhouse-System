@@ -24,12 +24,19 @@ class Notification(models.Model):
         return f"{self.user.username} - {self.message[:50]}..."
 
     def save(self, *args, **kwargs):
+        print(f"Saving notification: {self.message}, Device: {self.device}")  # Debug statement
+        if self.device:
+            print(f"Device ID: {self.device.device_id}")  # Debug statement
+        else:
+            print("Device is None")  # Debug statement
+
         super().save(*args, **kwargs)
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             f'notification_{self.user.id}',
             {
                 'type': 'notification_message',
-                'message': self.message
+                'message': self.message,
+                'device_id': self.device.device_id if self.device else None
             }
         )

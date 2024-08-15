@@ -1,5 +1,6 @@
 import logging
 from User.models import BlacklistedToken
+from User.serializers import PasswordResetConfirmSerializer, PasswordResetSerializer
 from rest_framework import generics, permissions
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
@@ -185,3 +186,23 @@ def logout_view(request):
     token = request.auth
     BlacklistedToken.objects.create(token=str(token))
     return create_response(message="Logout successful", status_code=status.HTTP_200_OK, success=True)
+
+@api_view(['POST'])
+@authentication_classes([CustomAuthentication])
+def password_reset_view(request):
+    serializer = PasswordResetSerializer(data=request.data, context={'request': request})
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"detail": "Password reset email has been sent."}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['POST'])
+@authentication_classes([CustomAuthentication])
+def password_reset_confirm_view(request):
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"detail": "Password has been reset successfully."}, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

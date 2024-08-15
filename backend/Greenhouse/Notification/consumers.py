@@ -1,4 +1,5 @@
 import json
+from urllib.parse import parse_qs
 from channels.generic.websocket import AsyncWebsocketConsumer
 from middleware.token_auth import validate_jwt_token  # Import your token validation function
 
@@ -6,9 +7,16 @@ class NotificationConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         print("WebSocket connected")
-        headers = dict(self.scope["headers"])
-        jwt_token = headers.get(b'x-jwt-token', b'').decode('utf-8')
+        
+        # Extract query string and parse it
+        query_string = self.scope['query_string'].decode('utf-8')
+        query_params = parse_qs(query_string)
+        jwt_token = query_params.get('token', [''])[0]
+        print(f"JWT Token received: {jwt_token}")  # Debug statement to print the token
+
         validated_token = await validate_jwt_token(jwt_token)  # Await the coroutine here
+        print(f"Validated Token: {validated_token}")  # Debug statement to print the validation result
+
         if not validated_token or not validated_token.is_authenticated:
             print("JWT token is invalid or missing. Closing connection.")
             await self.close(code=403)
@@ -47,5 +55,9 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def notification_message(self, event):
         # Send notification message to the WebSocket client
         message = event['message']
-        print(f"Sending notification message to {self.user.username}: {message}")
-        await self.send(text_data=json.dumps({'message': message}))
+        device_id = event.get('device_id', None)
+        print(f"Sending notification message to {self.user.username}: {message}, Device ID: {device_id}")
+        await self.send(text_data=json.dumps({
+            'message': message,
+            'device_id': device_id
+        }))

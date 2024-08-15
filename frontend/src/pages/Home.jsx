@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Container, Typography } from '@mui/material';
 import GreenhouseSummary from '../components/GreenhouseSummary';
 import DeviceDataFetcher from '../components/DeviceDataFetcher';
+import DeviceCard from '../components/DeviceCard';
 
 const Home = () => {
   const [filters, setFilters] = useState({

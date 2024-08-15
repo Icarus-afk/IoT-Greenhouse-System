@@ -8,7 +8,7 @@ from django.utils import timezone
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = ['id', 'name', 'location', 'timestamp', 'last_seen', 'is_online']
+        fields = ['id', 'device_id', 'name', 'location', 'timestamp', 'last_seen', 'is_online']
 
 class CropSerializer(serializers.ModelSerializer):
     class Meta:

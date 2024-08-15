@@ -103,17 +103,20 @@ SECURE_COOKIES = True
 AUTH_USER_MODEL = 'User.User'
 ROOT_URLCONF = "Greenhouse.urls"
 
+
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+        ],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
@@ -168,3 +171,14 @@ LOGGING = {
     },
 }
 
+# settings.py
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # Or your email service provider's SMTP server
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'ahmed.ehsan1258@gmail.com'  # Your email address
+EMAIL_HOST_PASSWORD = os.getenv('APP_PASS')  # Your email account's password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+FRONTEND_URL="http://127.0.0.1:5173"

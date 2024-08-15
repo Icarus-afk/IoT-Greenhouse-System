@@ -15,7 +15,7 @@ STATUS_TOPIC = "IoT/Device/Status"
 HVAC_TOPIC = "IoT/Device/HVAC"
 
 # MQTT Broker settings
-BROKER = "broker.hivemq.com"
+BROKER = "broker.emqx.io"
 PORT = 1883
 
 # Create a logger object

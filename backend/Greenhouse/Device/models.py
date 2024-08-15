@@ -27,7 +27,7 @@ class SensorData(models.Model):
     class Meta:
         verbose_name = "Sensor Data"
         verbose_name_plural = "Sensor Data"
-        
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         channel_layer = get_channel_layer()
@@ -37,11 +37,17 @@ class SensorData(models.Model):
                 f'sensor_data_{user.id}',
                 {
                     'type': 'sensor_data_message',
-                    'message': f'New sensor data: {self.temperature}, {self.humidity}, {self.soil_moisture}, {self.rain_level}, {self.light_lux}'
+                    'message': {
+                        'temperature': self.temperature,
+                        'humidity': self.humidity,
+                        'soil_moisture': self.soil_moisture,
+                        'rain_level': self.rain_level,
+                        'light_lux': self.light_lux,
+                    },
+                    'device_id': self.device.device_id if self.device else 'Unknown'
                 }
             )
-            print(f"Sent sensor data message to notification_{user.id}")
-            
+            print(f"Sent sensor data message to sensor_data_{user.id}: {self.temperature}, {self.humidity}, {self.soil_moisture}, {self.rain_level}, {self.light_lux}, Device ID: {self.device.device_id if self.device else 'Unknown'}")
             
 class DeviceStatus(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)

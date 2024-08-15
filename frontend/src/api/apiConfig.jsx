@@ -73,6 +73,9 @@ export const API_ENDPOINTS = {
   UPDATE_USER_INFO: '/user/update/',
   LOGOUT: '/user/logout/',
   REFRESH_TOKEN: '/user/refresh/',
-  GET_DEVICE_DATA: '/device/data/',  // Add this line
-  DEVICE_DETAILS: '/device/device/'
+  GET_DEVICE_DATA: '/device/data/', 
+  DEVICE_DETAILS: '/device/device/',
+  NOTIFICATIONS: '/notification/get/',
+  PASSWORD_RESET_REQUEST: '/user/password-reset/',
+  PASSWORD_RESET_CONFIRM: '/user/password-reset-confirm/',
 };
