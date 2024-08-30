@@ -45,7 +45,7 @@ const DeviceDataFetcher = ({ filters, setFilters }) => {
     useEffect(() => {
         fetchDevices();
         fetchDeviceData();
-    }, [page, pageSize]);
+    }, [page, pageSize, filters]);
 
     const handleFilterChange = (e) => {
         setFilters({ ...filters, [e.target.name]: e.target.value });
@@ -62,6 +62,7 @@ const DeviceDataFetcher = ({ filters, setFilters }) => {
     };
 
     const applyFilters = () => {
+        setPage(1); // Reset to first page when filters are applied
         fetchDeviceData();
     };
 
@@ -72,6 +73,7 @@ const DeviceDataFetcher = ({ filters, setFilters }) => {
             end_date: '',
         });
         setSelectedDevice('');
+        setPage(1); // Reset to first page when filters are reset
         fetchDeviceData();
     };
 

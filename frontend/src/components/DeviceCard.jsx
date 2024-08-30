@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import WebSocketManager from '../utils/websockManager';
-import { ProgressBar } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Card, CardContent, Grid } from '@mui/material';
+import { useSpring, animated } from '@react-spring/web';
+import './DeviceCard.css';
 
 const DeviceCard = ({ device }) => {
     const [latestData, setLatestData] = useState({
@@ -19,32 +19,31 @@ const DeviceCard = ({ device }) => {
         setIsAuthenticated(!!token);
 
         if (token) {
-            // Establish WebSocket connection with token as query parameter
             const url = `ws://127.0.0.1:8001/ws/sensor_data/?token=${token}`;
-            console.log('Connecting to WebSocket:', url); // Debugging log
+            console.log('Connecting to WebSocket:', url);
             WebSocketManager.connect(url, token);
         }
 
         return () => {
-            console.log('Disconnecting WebSocket'); // Debugging log
+            console.log('Disconnecting WebSocket');
             WebSocketManager.disconnect();
         };
     }, []);
 
     useEffect(() => {
         if (!device) {
-            console.error('Device prop is undefined'); // Debugging log
+            console.error('Device prop is undefined');
             return;
         }
 
         const handleMessage = (message) => {
-            console.log('Received message:', message); // Debugging log
+            console.log('Received message:', message);
             const data = JSON.parse(message);
             if (data.device_id === device.device_id) {
-                console.log('Matching device_id:', data.device_id); // Debugging log
+                console.log('Matching device_id:', data.device_id);
                 setLatestData(data);
             } else {
-                console.log('Non-matching device_id:', data.device_id); // Debugging log
+                console.log('Non-matching device_id:', data.device_id);
             }
         };
 
@@ -55,56 +54,62 @@ const DeviceCard = ({ device }) => {
         };
     }, [device]);
 
+    const animatedTemperature = useSpring({ value: latestData.temperature, from: { value: 0 } });
+    const animatedHumidity = useSpring({ value: latestData.humidity, from: { value: 0 } });
+    const animatedSoilMoisture = useSpring({ value: latestData.soil_moisture, from: { value: 0 } });
+    const animatedRainLevel = useSpring({ value: latestData.rain_level, from: { value: 0 } });
+    const animatedLightLux = useSpring({ value: latestData.light_lux, from: { value: 0 } });
+
     if (!device) {
         return <div>Error: Device not found</div>;
     }
-
+    
     return (
-        <div>
-            <Box>
-                {console.log('Rendering data:', latestData)} {/* Debugging log */}
-                <Box mb={2}>
-                    <Typography variant="h6">Temperature</Typography>
-                    <ProgressBar
-                        now={latestData.temperature}
-                        label={<span className="progress-label">{`${latestData.temperature}°C`}</span>}
-                        className="progress"
-                    />
-                </Box>
-                <Box mb={2}>
-                    <Typography variant="h6">Humidity</Typography>
-                    <ProgressBar
-                        now={latestData.humidity}
-                        label={<span className="progress-label">{`${latestData.humidity}%`}</span>}
-                        className="progress"
-                    />
-                </Box>
-                <Box mb={2}>
-                    <Typography variant="h6">Soil Moisture</Typography>
-                    <ProgressBar
-                        now={latestData.soil_moisture}
-                        label={<span className="progress-label">{`${latestData.soil_moisture}%`}</span>}
-                        className="progress"
-                    />
-                </Box>
-                <Box mb={2}>
-                    <Typography variant="h6">Rain Level</Typography>
-                    <ProgressBar
-                        now={latestData.rain_level}
-                        label={<span className="progress-label">{`${latestData.rain_level}mm`}</span>}
-                        className="progress"
-                    />
-                </Box>
-                <Box mb={2}>
-                    <Typography variant="h6">Light Intensity</Typography>
-                    <ProgressBar
-                        now={latestData.light_lux / 100}
-                        label={<span className="progress-label">{`${latestData.light_lux} lux`}</span>}
-                        className="progress"
-                    />
-                </Box>
-            </Box>
-        </div>
+        <Box className="device-card-container">
+            {console.log('Rendering data:', latestData)}
+            <Grid container spacing={2}>
+                <Grid item xs={12}>
+                    <Card className="device-card">
+                        <CardContent>
+                            <Typography className="device-card-title" variant="h6">Temperature</Typography>
+                            <animated.div className="device-card-value">{animatedTemperature.value.to(val => `${val.toFixed(2)}°C`)}</animated.div>
+                        </CardContent>
+                    </Card>
+                </Grid>
+                <Grid item xs={12}>
+                    <Card className="device-card">
+                        <CardContent>
+                            <Typography className="device-card-title" variant="h6">Humidity</Typography>
+                            <animated.div className="device-card-value">{animatedHumidity.value.to(val => `${val.toFixed(2)}%`)}</animated.div>
+                        </CardContent>
+                    </Card>
+                </Grid>
+                <Grid item xs={12}>
+                    <Card className="device-card">
+                        <CardContent>
+                            <Typography className="device-card-title" variant="h6">Soil Moisture</Typography>
+                            <animated.div className="device-card-value">{animatedSoilMoisture.value.to(val => `${val.toFixed(2)}%`)}</animated.div>
+                        </CardContent>
+                    </Card>
+                </Grid>
+                <Grid item xs={12}>
+                    <Card className="device-card">
+                        <CardContent>
+                            <Typography className="device-card-title" variant="h6">Rain Level</Typography>
+                            <animated.div className="device-card-value">{animatedRainLevel.value.to(val => `${val.toFixed(2)}%`)}</animated.div>
+                        </CardContent>
+                    </Card>
+                </Grid>
+                <Grid item xs={12}>
+                    <Card className="device-card">
+                        <CardContent>
+                            <Typography className="device-card-title" variant="h6">Light Intensity</Typography>
+                            <animated.div className="device-card-value">{animatedLightLux.value.to(val => `${val.toFixed(2)} lux`)}</animated.div>
+                        </CardContent>
+                    </Card>
+                </Grid>
+            </Grid>
+        </Box>
     );
 };
 

@@ -1,4 +1,3 @@
-// NotificationsPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Box, TextField, Pagination, CircularProgress, FormControl, Select, MenuItem, InputLabel, IconButton } from '@mui/material';
 import { apiClientAuth, API_ENDPOINTS } from '../api/apiConfig';
@@ -27,7 +26,7 @@ const NotificationsPage = () => {
         try {
             const response = await apiClientAuth.get(API_ENDPOINTS.NOTIFICATIONS, { params });
             setNotifications(response.data.data.results);
-            setTotalPages(Math.ceil(response.data.data.count / 10)); // Assuming 10 items per page
+            setTotalPages(Math.ceil(response.data.data.count / 100)); // Assuming 100 items per page
         } catch (error) {
             setError('Failed to fetch notifications.');
         } finally {
@@ -142,16 +141,22 @@ const NotificationsPage = () => {
                 </Box>
             </Box>
 
-            <NotificationsTable notifications={notifications} />
+            {loading ? (
+                <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />
+            ) : (
+                <>
+                    <NotificationsTable notifications={notifications} />
 
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                <Pagination
-                    count={totalPages}
-                    page={page}
-                    onChange={handlePageChange}
-                    color="primary"
-                />
-            </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                        <Pagination
+                            count={totalPages}
+                            page={page}
+                            onChange={handlePageChange}
+                            color="primary"
+                        />
+                    </Box>
+                </>
+            )}
         </Container>
     );
 };
