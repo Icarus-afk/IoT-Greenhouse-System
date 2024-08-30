@@ -12,7 +12,8 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from User.authenticate import CustomAuthentication, authenticate
 from Config.response import create_response
-
+from .pipeline import custom_social_auth_response
+from social_django.utils import psa
 
 
 User = get_user_model()
@@ -206,3 +207,35 @@ def password_reset_confirm_view(request):
         serializer.save()
         return Response({"detail": "Password has been reset successfully."}, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# @api_view(['POST'])
+# def social_login_view(request):
+#     token = request.data.get('token')
+#     if not token:
+#         return Response({"error": "Token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+#     try:
+#         # Use the social_auth to verify the token and get user info
+#         backend = 'social_core.backends.google.GoogleOpenIdConnect'
+#         social = psa('social:complete')(request.backend)
+#         user = social(strategy=request.strategy, backend=backend).do_auth(token)
+
+#         if user and user.is_authenticated:
+#             # Generate JWT token for user
+#             refresh = RefreshToken.for_user(user)
+#             return Response({
+#                 'user': {
+#                     'id': user.id,
+#                     'username': user.username,
+#                     'email': user.email,
+#                     'first_name': user.first_name,
+#                     'last_name': user.last_name,
+#                 },
+#                 'jwt': str(refresh.access_token),
+#                 'refresh': str(refresh),
+#             })
+#         else:
+#             return Response({"error": "Authentication failed"}, status=status.HTTP_401_UNAUTHORIZED)
+#     except Exception as e:
+#         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

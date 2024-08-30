@@ -29,13 +29,30 @@ HVAC_TOPIC = "IoT/Device/HVAC"
 
 # Helper function to determine warning level based on thresholds
 def get_warning_level(value, crop_config):
-    if crop_config.high_min <= value <= crop_config.high_max:
+    try:
+        value = float(value)
+        high_min = float(crop_config.high_min)
+        high_max = float(crop_config.high_max)
+        tolerable_min = float(crop_config.tolerable_min)
+        tolerable_max = float(crop_config.tolerable_max)
+        low_min = float(crop_config.low_min)
+        low_max = float(crop_config.low_max)
+    except ValueError as e:
+        logger.error(f"Error converting crop configuration to float: {e}")
+        return None
+
+    logger.debug(f"Value: {value}, High Min: {high_min}, High Max: {high_max}, "
+                 f"Tolerable Min: {tolerable_min}, Tolerable Max: {tolerable_max}, "
+                 f"Low Min: {low_min}, Low Max: {low_max}")
+
+    if high_min <= value <= high_max:
         return "High"
-    elif crop_config.tolerable_min <= value <= crop_config.tolerable_max:
+    elif tolerable_min <= value <= tolerable_max:
         return "Good"
-    elif crop_config.low_min <= value <= crop_config.low_max:
+    elif low_min <= value <= low_max:
         return "Low"
     return None
+
 
 # Helper function to check and insert a notification if needed
 def check_and_notify(device, parameter, value):
@@ -45,8 +62,12 @@ def check_and_notify(device, parameter, value):
         logger.debug(f"Greenhouse obtained: {greenhouse.id}")
         crop_config = CropConfig.objects.get(crop=greenhouse.crop, parameter=parameter)
         logger.debug(f"Crop configuration obtained: {crop_config.id}")
-    except (Greenhouse.DoesNotExist, CropConfig.DoesNotExist) as e:
-        logger.error(f"No greenhouse or crop configuration found for device: {device.device_id} and parameter: {parameter}")
+        
+        # Convert the value to a float if it's a string
+        if isinstance(value, str):
+            value = float(value)
+    except (Greenhouse.DoesNotExist, CropConfig.DoesNotExist, ValueError) as e:
+        logger.error(f"No greenhouse, crop configuration found, or invalid value for device: {device.device_id} and parameter: {parameter}")
         logger.debug(f"Error: {e}")
         return
 
@@ -71,7 +92,7 @@ def check_and_notify(device, parameter, value):
         logger.info(f"Notification created for device: {device.name}, {message}")
     else:
         logger.info(f"No new notification needed for device: {device.name}, parameter: {parameter}")
-        
+
 # MQTT on_connect callback
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
@@ -82,7 +103,6 @@ def on_connect(client, userdata, flags, rc):
     else:
         logger.error(f"Failed to connect, return code {rc}")
 
-# MQTT on_message callback
 # MQTT on_message callback
 def on_message(client, userdata, msg):
     logger.debug(f"Received a message on topic: {msg.topic}")
@@ -101,24 +121,31 @@ def on_message(client, userdata, msg):
         logger.debug(f"Device last seen timestamp updated: {device.last_seen}")
 
         if topic == DATA_TOPIC:
+            # Convert string values to float if needed
+            temperature = float(payload.get("temperature", 0))
+            humidity = float(payload.get("humidity", 0))
+            soil_moisture = float(payload.get("soil_moisture", 0))
+            rain_level = float(payload.get("rain_level", 0))
+            light_lux = float(payload.get("light_lux", 0))
+
             SensorData.objects.create(
                 device=device,
-                temperature=payload["temperature"],
-                humidity=payload["humidity"],
-                soil_moisture=payload["soil_moisture"],
-                rain_level=payload["rain_level"],
-                light_lux=payload["light_lux"],
+                temperature=temperature,
+                humidity=humidity,
+                soil_moisture=soil_moisture,
+                rain_level=rain_level,
+                light_lux=light_lux,
                 timestamp=timestamp
             )
             logger.info(f"Sensor data saved for device: {device.device_id}")
             logger.debug(f"Sensor data: {payload}")
             
             # Check and notify for each parameter
-            check_and_notify(device, "Temperature", payload["temperature"])
-            check_and_notify(device, "Humidity", payload["humidity"])
-            check_and_notify(device, "Soil Moisture", payload["soil_moisture"])
-            check_and_notify(device, "Rainfall", payload["rain_level"])
-            check_and_notify(device, "Light Intensity", payload["light_lux"])
+            check_and_notify(device, "Temperature", temperature)
+            check_and_notify(device, "Humidity", humidity)
+            check_and_notify(device, "Soil Moisture", soil_moisture)
+            check_and_notify(device, "Rainfall", rain_level)
+            check_and_notify(device, "Light Intensity", light_lux)
         
         elif topic == STATUS_TOPIC:
             DeviceStatus.objects.create(
@@ -135,12 +162,12 @@ def on_message(client, userdata, msg):
                 timestamp=timestamp
             )
             logger.info(f"HVAC status saved for device: {device.name}")
-            logger.debug(f"HVAC status: {payload['status']}")
+            logger.debug(f"HVAC status: {payload['fan_status']}")
     except Exception as e:
         logger.error(f"Error saving data: {e}")
         logger.debug(f"Payload: {payload}")
-        
 
+# Start the MQTT client
 def start_mqtt_client():
     client = mqtt.Client()
     client.on_connect = on_connect

@@ -11,16 +11,17 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils.dateparse import parse_date
 import logging
-from django.utils.timezone import make_aware
+from django.utils.timezone import make_aware, now
 from datetime import datetime, time
 
 
 logger = logging.getLogger(__name__)
 
 class DeviceDataPagination(PageNumberPagination):
-    page_size = 10
+    page_size = 100
     page_size_query_param = 'page_size'
-    max_page_size = 1000
+    max_page_size = 10000
+
 
 class DeviceDataView(generics.ListAPIView):
     serializer_class = SensorDataSerializer
@@ -32,7 +33,7 @@ class DeviceDataView(generics.ListAPIView):
         user = self.request.user
         greenhouses = Greenhouse.objects.filter(users=user)
         devices = Device.objects.filter(greenhouse__in=greenhouses)
-        queryset = SensorData.objects.filter(device__in=devices).order_by('-timestamp')
+        queryset = SensorData.objects.filter(device__in=devices).order_by('timestamp')
         
         logger.debug(f"Initial queryset count: {queryset.count()}")
         
@@ -44,20 +45,28 @@ class DeviceDataView(generics.ListAPIView):
         
         if start_date:
             parsed_start_date = parse_date(start_date)
-            logger.debug(f"Parsed start date: {parsed_start_date}")
-            queryset = queryset.filter(timestamp__date__gte=parsed_start_date)
-            logger.debug(f"Queryset count after start date filter: {queryset.count()}")
+            if parsed_start_date:
+                parsed_start_date = make_aware(datetime.combine(parsed_start_date, datetime.min.time()), timezone=now().tzinfo)
+                logger.debug(f"Parsed start date: {parsed_start_date}")
+                queryset = queryset.filter(timestamp__gte=parsed_start_date)
+                logger.debug(f"Queryset count after start date filter: {queryset.count()}")
+            else:
+                logger.error(f"Failed to parse start date: {start_date}")
+        
         if end_date:
             parsed_end_date = parse_date(end_date)
-            logger.debug(f"Parsed end date: {parsed_end_date}")
-            queryset = queryset.filter(timestamp__date__lte=parsed_end_date)
-            logger.debug(f"Queryset count after end date filter: {queryset.count()}")
-        if device_id:
-            logger.debug(f"Filtering by device_id: {device_id}")
-            queryset = queryset.filter(device__id=device_id)
-            logger.debug(f"Queryset count after device_id filter: {queryset.count()}")
+            if parsed_end_date:
+                parsed_end_date = make_aware(datetime.combine(parsed_end_date, datetime.max.time()), timezone=now().tzinfo)
+                logger.debug(f"Parsed end date: {parsed_end_date}")
+                queryset = queryset.filter(timestamp__lte=parsed_end_date)
+                logger.debug(f"Queryset count after end date filter: {queryset.count()}")
+            else:
+                logger.error(f"Failed to parse end date: {end_date}")
         
-        logger.debug(f"Filtered queryset count: {queryset.count()}")
+        if device_id:
+            queryset = queryset.filter(device_id=device_id)
+            logger.debug(f"Queryset count after device ID filter: {queryset.count()}")
+        
         return queryset
 
     def list(self, request, *args, **kwargs):
@@ -68,7 +77,7 @@ class DeviceDataView(generics.ListAPIView):
             return create_response(data=str(e), message="Validation error", status_code=400)
         except Exception as e:
             return create_response(data=str(e), message="An error occurred", status_code=500)
-        
+   
         
 class DeviceStatusFilter(filters.FilterSet):
     device_id = filters.CharFilter(field_name='device__device_id')

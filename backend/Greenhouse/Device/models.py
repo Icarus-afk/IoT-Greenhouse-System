@@ -48,7 +48,13 @@ class SensorData(models.Model):
                 }
             )
             print(f"Sent sensor data message to sensor_data_{user.id}: {self.temperature}, {self.humidity}, {self.soil_moisture}, {self.rain_level}, {self.light_lux}, Device ID: {self.device.device_id if self.device else 'Unknown'}")
-            
+
+    def __str__(self):
+        return (f"SensorData(id={self.id}, timestamp={self.timestamp}, temperature={self.temperature}, "
+                f"humidity={self.humidity}, soil_moisture={self.soil_moisture}, rain_level={self.rain_level}, "
+                f"light_lux={self.light_lux}, device_id={self.device.device_id if self.device else 'Unknown'})")
+        
+    
 class DeviceStatus(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, blank=True, null=True)
